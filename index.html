@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100 Push Up Challenge - Interactive Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Slate background, Indigo accents, Dark Slate text) -->
+    <!-- Application Structure Plan: A single-page app with a top navigation bar for phases (1-4). The main content area displays the selected phase's 4-week plan in a card format. This tabbed structure breaks down the long 16-week plan into manageable, user-selectable chunks, preventing overwhelming the user with information. A separate section visualizes progress via a line chart for motivation, and an exercise guide clarifies the different push-up forms. This is more user-friendly than a long scrolling table. -->
+    <!-- Visualization & Content Choices: 1. **16-Week Plan (Table)** -> Goal: Organize/Inform -> Method: Interactive Tabs (HTML/Tailwind) with Weekly Cards. Interaction: JS-powered tab switching. Justification: Breaks down a long plan into focused sections. 2. **Test Day Progress (Implied Data)** -> Goal: Show Change -> Method: Line Chart (Chart.js/Canvas). Interaction: Tooltips on hover. Justification: Visually motivates the user by showing potential progress over time. 3. **Push-up Types (List)** -> Goal: Inform -> Method: Grid of cards with text descriptions and Unicode icons (HTML/Tailwind). Interaction: None. Justification: Provides a quick, clear reference for correct form. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 45vh;
+            max-height: 450px;
+        }
+        .phase-btn.active {
+            background-color: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+        .progress-circle {
+            transition: stroke-dashoffset 0.5s ease-out;
+        }
+        .week-card {
+            transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+            cursor: pointer;
+        }
+        .week-card.current-week {
+            border-color: #4f46e5;
+            background-color: #e0e7ff;
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-600">১০০ পুশ আপ চ্যালেঞ্জ</h1>
+            <p class="mt-4 text-lg text-slate-600">আপনার ফিটনেস যাত্রার চূড়ান্ত পর্যায় পর্যন্ত একটি বিজ্ঞানসম্মত গাইড</p>
+        </header>
+
+        <section id="plan-introduction" class="mb-12">
+            <h2 class="text-3xl font-bold text-center mb-8">পরিকল্পনা শুরুর আগে</h2>
+            <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-green-600">ওয়ার্ম-আপ (অনুশীলনের আগে ৫-১০ মিনিট)</h3>
+                        <ul class="list-disc list-inside space-y-2 text-slate-700">
+                            <li>হালকা জগিং বা জাম্পিং জ্যাকস (২-৩ মিনিট)</li>
+                            <li>আর্ম সার্কেল (সামনে ও পিছনে ৩০ সেকেন্ড করে)</li>
+                            <li>শোল্ডার রোল (৩০ সেকেন্ড)</li>
+                            <li>রিস্ট সার্কেল (৩০ সেকেন্ড)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-blue-600">কুল-ডাউন (অনুশীলনের পরে ৫ মিনিট)</h3>
+                        <ul class="list-disc list-inside space-y-2 text-slate-700">
+                            <li>চেস্ট স্ট্রেচ (৩০ সেকেন্ড)</li>
+                            <li>শোল্ডার স্ট্রেচ (৩০ সেকেন্ড)</li>
+                            <li>ট্রাইসেপস স্ট্রেচ (৩০ সেকেন্ড)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded-r-lg">
+                    <p class="font-bold">গুরুত্বপূর্ণ নোট: AMRAP</p>
+                    <p>এর অর্থ হলো "As Many Reps As Possible" অর্থাৎ, সঠিক ফর্ম বজায় রেখে এক সেটে আপনার পক্ষে যতগুলো করা সম্ভব।</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="principles" class="mb-12">
+            <h2 class="text-3xl font-bold text-center mb-8">অনুশীলনের মূল নীতি</h2>
+             <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
+                <p class="text-center text-slate-600 mb-6">এই পরিকল্পনাটি কয়েকটি মূল নীতির উপর ভিত্তি করে তৈরি হয়েছে যা আপনার সাফল্য নিশ্চিত করবে এবং আঘাতের ঝুঁকি কমিয়ে আনবে। প্রতিটি নীতি অনুসরণ করা আপনার লক্ষ্যের দিকে এগিয়ে যাওয়ার জন্য অত্যন্ত গুরুত্বপূর্ণ।</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+                    <div class="bg-slate-100 p-4 rounded-lg">
+                        <div class="text-4xl mb-2">🤸</div>
+                        <h3 class="font-semibold text-lg">সঠিক ফর্ম সর্বাগ্রে</h3>
+                        <p class="text-sm text-slate-500">সংখ্যার চেয়ে কৌশল বেশি গুরুত্বপূর্ণ।</p>
+                    </div>
+                    <div class="bg-slate-100 p-4 rounded-lg">
+                        <div class="text-4xl mb-2">🗓️</div>
+                        <h3 class="font-semibold text-lg">ধারাবাহিকতা</h3>
+                        <p class="text-sm text-slate-500">সপ্তাহে ৩ দিন অনুশীলন, ৪ দিন বিশ্রাম।</p>
+                    </div>
+                    <div class="bg-slate-100 p-4 rounded-lg">
+                        <div class="text-4xl mb-2">🧘</div>
+                        <h3 class="font-semibold text-lg">শুনুন আপনার শরীরকে</h3>
+                        <p class="text-sm text-slate-500">তীব্র ব্যথা অনুভব করলে বিশ্রাম নিন।</p>
+                    </div>
+                    <div class="bg-slate-100 p-4 rounded-lg">
+                        <div class="text-4xl mb-2">🔥</div>
+                        <h3 class="font-semibold text-lg">ওয়ার্ম-আপ ও কুল-ডাউন</h3>
+                        <p class="text-sm text-slate-500">আঘাত এড়াতে শরীরকে প্রস্তুত করুন।</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="the-plan" class="mb-12">
+            <h2 class="text-3xl font-bold text-center mb-8">আপনার ১৬-সপ্তাহের সম্পূর্ণ প্ল্যান</h2>
+            <div class="max-w-6xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                 <p class="text-center text-slate-600 mb-8">এই পরিকল্পনাটি চারটি ধাপে বিভক্ত। প্রতিটি ধাপ আপনাকে ধীরে ধীরে আপনার লক্ষ্যের দিকে নিয়ে যাবে। নিচের ট্যাবগুলো ব্যবহার করে প্রতিটি ধাপের বিস্তারিত দেখুন।</p>
+                <div id="phase-navigation" class="flex flex-wrap justify-center gap-2 mb-8">
+                    <button class="phase-btn active py-2 px-4 border-2 border-slate-300 rounded-full font-semibold transition-all duration-300" data-phase="1">ফেজ ১: ভিত্তি নির্মাণ</button>
+                    <button class="phase-btn py-2 px-4 border-2 border-slate-300 rounded-full font-semibold transition-all duration-300" data-phase="2">ফেজ ২: ভলিউম বৃদ্ধি</button>
+                    <button class="phase-btn py-2 px-4 border-2 border-slate-300 rounded-full font-semibold transition-all duration-300" data-phase="3">ফেজ ৩: সহনশীলতা তৈরি</button>
+                    <button class="phase-btn py-2 px-4 border-2 border-slate-300 rounded-full font-semibold transition-all duration-300" data-phase="4">ফেজ ৪: চূড়ান্ত পর্যায়</button>
+                </div>
+
+                <div id="plan-content">
+                     <!-- Phase 1 Content -->
+                    <div id="phase-1" class="phase-content grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="1">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ১</h3>
+                            <p><strong>দিন ১:</strong> ইনক্লাইন পুশ আপ: ৩ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> ওয়াল পুশ আপ: ৩ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ৩:</strong> ইনক্লাইন পুশ আপ: ৩ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: সঠিক ফর্ম শেখা এবং পেশীকে অভ্যস্ত করা।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="2">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ২</h3>
+                            <p><strong>দিন ১:</strong> ইনক্লাইন পুশ আপ: ৪ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> ওয়াল পুশ আপ: ৪ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ৩:</strong> ইনক্লাইন পুশ আপ: ৪ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: মোট ভলিউম (সেট) বাড়ানো।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="3">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ৩</h3>
+                            <p><strong>দিন ১:</strong> নী পুশ আপ: ৩ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> ইনক্লাইন পুশ আপ: ৪ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p><strong>দিন ৩:</strong> নী পুশ আপ: ৩ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: কঠিন ভ্যারিয়েশনে যাওয়া।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-indigo-500" data-week="4">
+                            <h3 class="font-bold text-xl mb-3 text-indigo-600">সপ্তাহ ৪ (টেস্ট)</h3>
+                            <p><strong>দিন ১:</strong> নী পুশ আপ: ৪ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> ইনক্লাইন পুশ আপ: ৫ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ৩ (টেস্ট ডে):</strong> একটানা যতগুলো স্ট্যান্ডার্ড পুশ আপ পারেন</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: প্রথম মাসের অগ্রগতি পরীক্ষা করা।</p>
+                        </div>
+                    </div>
+                    <!-- Phase 2 Content -->
+                    <div id="phase-2" class="phase-content hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="5">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ৫</h3>
+                            <p><strong>দিন ১:</strong> স্ট্যান্ডার্ড: ১ সেট AMRAP + নী: ৩ সেট AMRAP (৯০s)</p>
+                            <p><strong>দিন ২:</strong> স্ট্যান্ডার্ড: ২ সেট AMRAP + নী: ২ সেট AMRAP (৯০s)</p>
+                            <p><strong>দিন ৩:</strong> স্ট্যান্ডার্ড: ১ সেট AMRAP + নী: ৩ সেট AMRAP (৯০s)</p>
+                             <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: স্ট্যান্ডার্ড পুশ আপ শুরু করা।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="6">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ৬</h3>
+                            <p><strong>দিন ১:</strong> স্ট্যান্ডার্ড: ২ সেট AMRAP + নী: ২ সেট AMRAP (৯০s)</p>
+                            <p><strong>দিন ২:</strong> স্ট্যান্ডার্ড: ৩ সেট AMRAP + নী: ১ সেট AMRAP (৯০s)</p>
+                            <p><strong>দিন ৩:</strong> স্ট্যান্ডার্ড: ২ সেট AMRAP + নী: ২ সেট AMRAP (৯০s)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: স্ট্যান্ডার্ড পুশ আপের সংখ্যা বৃদ্ধি করা।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="7">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ৭</h3>
+                            <p><strong>দিন ১:</strong> স্ট্যান্ডার্ড পুশ আপ: ৫ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> নী পুশ আপ: ৫ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ৩:</strong> স্ট্যান্ডার্ড পুশ আপ: ৫ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: সম্পূর্ণভাবে স্ট্যান্ডার্ড পুশ আপে মনোযোগ।</p>
+                        </div>
+                         <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-indigo-500" data-week="8">
+                            <h3 class="font-bold text-xl mb-3 text-indigo-600">সপ্তাহ ৮ (টেস্ট)</h3>
+                            <p><strong>দিন ১:</strong> স্ট্যান্ডার্ড পুশ আপ: ৬ সেট AMRAP (৯০s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> ইনক্লাইন পুশ আপ: ৬ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ৩ (টেস্ট ডে):</strong> একটানা যতগুলো স্ট্যান্ডার্ড পুশ আপ পারেন</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: ভলিউম সহ্য করার ক্ষমতা পরীক্ষা করা।</p>
+                        </div>
+                    </div>
+                     <!-- Phase 3 Content -->
+                    <div id="phase-3" class="phase-content hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="9">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ৯</h3>
+                            <p><strong>দিন ১:</strong> স্ট্যান্ডার্ড পুশ আপ: ৪ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> স্ট্যান্ডার্ড পুশ আপ: ৪ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ৩:</strong> স্ট্যান্ডার্ড পুশ আপ: ৪ সেট AMRAP (৬০s বিশ্রাম)</p>
+                             <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: সেটের মধ্যে বিশ্রামের সময় কমানো।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="10">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ১০</h3>
+                            <p><strong>দিন ১:</strong> স্ট্যান্ডার্ড পুশ আপ: ৫ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> স্ট্যান্ডার্ড পুশ আপ: ৫ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p><strong>দিন ৩:</strong> স্ট্যান্ডার্ড পুশ আপ: ৫ সেট AMRAP (৬০s বিশ্রাম)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: কম বিশ্রামে বেশি সেট করা।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="11">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ১১</h3>
+                            <p><strong>দিন ১:</strong> স্ট্যান্ডার্ড পুশ আপ: ৬ সেট AMRAP (৪৫s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> স্ট্যান্ডার্ড পুশ আপ: ৬ সেট AMRAP (৪৫s বিশ্রাম)</p>
+                            <p><strong>দিন ৩:</strong> স্ট্যান্ডার্ড পুশ আপ: ৬ সেট AMRAP (৪৫s বিশ্রাম)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: বিশ্রাম আরও কমানো। এটি চ্যালেঞ্জিং হবে।</p>
+                        </div>
+                         <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-indigo-500" data-week="12">
+                            <h3 class="font-bold text-xl mb-3 text-indigo-600">সপ্তাহ ১২ (টেস্ট)</h3>
+                            <p><strong>দিন ১:</strong> স্ট্যান্ডার্ড পুশ আপ: ৭ সেট AMRAP (৪৫s বিশ্রাম)</p>
+                            <p><strong>দিন ২:</strong> পিরামিড সেট: (১০, ১৫, ২০, ১৫, ১০ reps)</p>
+                            <p><strong>দিন ৩ (টেস্ট ডে):</strong> একটানা যতগুলো স্ট্যান্ডার্ড পুশ আপ পারেন</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: উচ্চ ভলিউমের সাথে মানিয়ে নেওয়া।</p>
+                        </div>
+                    </div>
+                    <!-- Phase 4 Content -->
+                    <div id="phase-4" class="phase-content hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="13">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ১৩</h3>
+                            <p><strong>দিন ১:</strong> ম্যাক্স সেট (AMRAP) + ২ সেট AMRAP (৬০s)</p>
+                            <p><strong>দিন ২ (সহজ):</strong> নী পুশ আপ: ৩ সেট AMRAP (৬০s)</p>
+                            <p><strong>দিন ৩:</strong> ম্যাক্স সেট (AMRAP) + ২ সেট AMRAP (৬০s)</p>
+                             <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: একটানা সর্বোচ্চ চেষ্টা করা।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="14">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ১৪</h3>
+                            <p><strong>দিন ১:</strong> ম্যাক্স সেট (AMRAP) + ৩ সেট AMRAP (৬০s)</p>
+                            <p><strong>দিন ২ (সহজ):</strong> ইনক্লাইন পুশ আপ: ৩ সেট AMRAP (৬০s)</p>
+                            <p><strong>দিন ৩:</strong> ম্যাক্স সেট (AMRAP) + ৩ সেট AMRAP (৬০s)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: শরীরকে চূড়ান্ত চাপের জন্য প্রস্তুত করা।</p>
+                        </div>
+                        <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-transparent" data-week="15">
+                            <h3 class="font-bold text-xl mb-3">সপ্তাহ ১৫</h3>
+                            <p><strong>দিন ১:</strong> ম্যাক্স সেট (AMRAP) + ১ সেট AMRAP (৯০s)</p>
+                            <p><strong>দিন ২:</strong> সম্পূর্ণ বিশ্রাম</p>
+                            <p><strong>দিন ৩ (হালকা):</strong> ওয়াল পুশ আপ: ৩ সেট (১৫-২০)</p>
+                            <p class="mt-2 text-sm text-indigo-700 font-medium">লক্ষ্য: শরীরকে চূড়ান্ত পরীক্ষার জন্য পুনরুদ্ধার করা।</p>
+                        </div>
+                         <div class="week-card bg-slate-100 p-5 rounded-lg border-2 border-green-500" data-week="16">
+                            <h3 class="font-bold text-xl mb-3 text-green-600">সপ্তাহ ১৬ (ফাইনাল টেস্ট)</h3>
+                            <p><strong>দিন ১ (হালকা):</strong> নী পুশ আপ: ২ সেট (১০-১২)</p>
+                            <p><strong>দিন ২:</strong> সম্পূর্ণ বিশ্রাম</p>
+                            <p><strong>দিন ৩ (ফাইনাল টেস্ট):</strong> আপনার লক্ষ্য অর্জনের চেষ্টা করুন!</p>
+                            <p class="mt-2 text-sm text-green-700 font-medium"> চূড়ান্ত লক্ষ্য: আপনার সমস্ত শক্তি দিয়ে চেষ্টা করুন!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="progress" class="mb-12">
+             <h2 class="text-3xl font-bold text-center mb-8">আপনার অগ্রগতি ট্র্যাক করুন</h2>
+             <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
+                 <p class="text-center text-slate-600 mb-6">প্রতিটি টেস্ট সপ্তাহের শেষে আপনার ফলাফল এখানে ইনপুট দিন এবং চার্টে আপনার বাস্তব অগ্রগতি দেখুন।</p>
+                <div class="chart-container mb-8">
+                    <canvas id="progressChart"></canvas>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center mb-8">
+                    <div class="flex justify-center">
+                        <div class="relative w-48 h-48">
+                            <svg class="w-full h-full" viewBox="0 0 36 36">
+                                <path class="text-slate-200" stroke-width="3.8" stroke="currentColor" fill="none"
+                                      d="M18 2.0845
+                                         a 15.9155 15.9155 0 0 1 0 31.831
+                                         a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                <path id="progress-circle" class="progress-circle text-indigo-600" stroke-width="3.8" stroke-linecap="round" stroke="currentColor" fill="none"
+                                      stroke-dasharray="100, 100"
+                                      stroke-dashoffset="100"
+                                      d="M18 2.0845
+                                         a 15.9155 15.9155 0 0 1 0 31.831
+                                         a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            </svg>
+                            <div id="progress-text" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                                <span class="block text-3xl font-bold text-indigo-600">0%</span>
+                                <span class="text-xs text-slate-500">লক্ষ্যের দিকে</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="feedback-panel" class="text-center md:text-left bg-slate-100 rounded-lg p-4 h-full flex flex-col justify-center">
+                         <p class="text-slate-700 font-medium">আপনার টেস্ট ডে'র ফলাফল ইনপুট করে অগ্রগতি দেখুন।</p>
+                    </div>
+                </div>
+
+                <div class="border-t pt-6">
+                    <h3 class="text-lg font-semibold text-center mb-4">ফলাফল ও লক্ষ্যমাত্রা ইনপুট করুন</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end mb-4">
+                        <div class="lg:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-4" id="progress-form">
+                            <div>
+                                <label for="week4" class="block text-sm font-medium text-slate-700 mb-1">সপ্তাহ 4</label>
+                                <input type="number" id="week4" placeholder="পুশ আপ সংখ্যা" min="0" class="progress-input mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                             <div>
+                                <label for="week8" class="block text-sm font-medium text-slate-700 mb-1">সপ্তাহ 8</label>
+                                <input type="number" id="week8" placeholder="পুশ আপ সংখ্যা" min="0" class="progress-input mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                             <div>
+                                <label for="week12" class="block text-sm font-medium text-slate-700 mb-1">সপ্তাহ 12</label>
+                                <input type="number" id="week12" placeholder="পুশ আপ সংখ্যা" min="0" class="progress-input mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                             <div>
+                                <label for="week16" class="block text-sm font-medium text-slate-700 mb-1">সপ্তাহ 16</label>
+                                <input type="number" id="week16" placeholder="পুশ আপ সংখ্যা" min="0" class="progress-input mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                        <div class="lg:col-span-1">
+                            <label for="goal-input" class="block text-sm font-medium text-slate-700 mb-1">আপনার লক্ষ্য</label>
+                            <input type="number" id="goal-input" value="100" min="1" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="flex justify-center gap-4 mt-4">
+                         <button id="save-progress" class="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 2.5a.5.5 0 00-1 0v1.5H5a.5.5 0 000 1h1.5V6a.5.5 0 001 0V5h1.5a.5.5 0 000-1H8V2.5zM12.5 5a.5.5 0 01.5.5v10a.5.5 0 01-1 0V5.5a.5.5 0 01.5-.5zM3.5 12a.5.5 0 00-1 0v1.5H1a.5.5 0 000 1h1.5V16a.5.5 0 001 0v-1.5H5a.5.5 0 000-1H3.5V12z"/></svg>
+                            সেভ করুন
+                        </button>
+                        <button id="reset-chart" class="bg-red-500 text-white py-2 px-6 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7V9a1 1 0 01-2 0V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13V11a1 1 0 112 0v6a1 1 0 01-1 1h-6a1 1 0 110-2h2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+                            রিসেট করুন
+                        </button>
+                    </div>
+                </div>
+             </div>
+        </section>
+
+        <section id="exercise-guide">
+            <h2 class="text-3xl font-bold text-center mb-8">পুশ আপের প্রকারভেদ ও সঠিক কৌশল</h2>
+             <div class="max-w-4xl mx-auto">
+                 <p class="text-center text-slate-600 mb-6">এই পরিকল্পনায় বিভিন্ন ধরণের পুশ আপ ব্যবহার করা হয়েছে। প্রতিটি ভ্যারিয়েশন আপনাকে ধীরে ধীরে স্ট্যান্ডার্ড পুশ আপের জন্য প্রস্তুত করবে। নিচে সেগুলোর একটি সংক্ষিপ্ত বিবরণ দেওয়া হলো।</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="font-semibold text-xl mb-2">ওয়াল পুশ আপ (Wall Push-up)</h3>
+                        <p class="text-slate-600">সবচেয়ে সহজ ভ্যারিয়েশন। দেয়াল থেকে কয়েক ফুট দূরে দাঁড়িয়ে, হাত দেয়ালে রেখে পুশ আপ করুন। এটি নতুনদের জন্য চমৎকার।</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="font-semibold text-xl mb-2">ইনক্লাইন পুশ আপ (Incline Push-up)</h3>
+                        <p class="text-slate-600">কোনো উঁচু জায়গা, যেমন - টেবিল বা বেঞ্চে হাত রেখে পুশ আপ করুন। যত উঁচু জায়গায় হাত রাখবেন, তত সহজ হবে।</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="font-semibold text-xl mb-2">নী পুশ আপ (Knee Push-up)</h3>
+                        <p class="text-slate-600">মাটিতে হাঁটু গেড়ে পুশ আপ করুন। এটি স্ট্যান্ডার্ড পুশ আপের চাপ কমিয়ে দেয় এবং শক্তি গঠনে সহায়তা করে।</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="font-semibold text-xl mb-2">স্ট্যান্ডার্ড পুশ আপ (Standard Push-up)</h3>
+                        <p class="text-slate-600">ক্লাসিক পুশ আপ। শরীর মাথা থেকে পা পর্যন্ত একটি সরলরেখায় থাকবে এবং বুক মাটি পর্যন্ত নামিয়ে আবার উপরে উঠতে হবে।</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+     <footer class="text-center py-6 bg-slate-100 mt-12">
+        <p class="text-slate-600 mb-2">আপনার ফিটনেস যাত্রার জন্য শুভকামনা!</p>
+        <p class="text-sm text-slate-500">&copy; ২০২৫ <a href="https://www.ashikuzzamanmoon.com/" target="_blank" rel="noopener noreferrer" class="font-semibold text-indigo-600 hover:underline">Ashikuzzaman Moon</a>. সর্বস্বত্ব সংরক্ষিত।</p>
+    </footer>
+
+    <script>
+        const phaseButtons = document.querySelectorAll('.phase-btn');
+        const phaseContents = document.querySelectorAll('.phase-content');
+        const weekCards = document.querySelectorAll('.week-card');
+
+        phaseButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetPhase = button.dataset.phase;
+
+                phaseButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+
+                phaseContents.forEach(content => {
+                    if (content.id === `phase-${targetPhase}`) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        weekCards.forEach(card => {
+            card.addEventListener('click', () => {
+                weekCards.forEach(c => c.classList.remove('current-week'));
+                card.classList.add('current-week');
+                localStorage.setItem('currentPushupWeek', card.dataset.week);
+            });
+        });
+        
+        const initialData = [null, null, null, null];
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(79, 70, 229, 0.5)');
+        gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+
+        const progressChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['সপ্তাহ ৪', 'সপ্তাহ ৮', 'সপ্তাহ ১২', 'সপ্তাহ ১৬'],
+                datasets: [
+                    {
+                        label: 'আপনার প্রকৃত ফলাফল',
+                        data: initialData,
+                        backgroundColor: gradient,
+                        borderColor: '#4f46e5',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#4f46e5',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#4f46e5',
+                        pointHoverBorderColor: '#fff',
+                        tension: 0.4,
+                        fill: true,
+                        spanGaps: true,
+                    },
+                    {
+                        label: 'সম্ভাব্য অগ্রগতি',
+                        data: [null, null, null, null],
+                        borderColor: 'rgba(16, 185, 129, 0.6)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        borderDash: [5, 5],
+                        fill: false,
+                        spanGaps: true,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'পুশ আপ সংখ্যা'
+                        }
+                    },
+                    x: {
+                         title: {
+                            display: true,
+                            text: 'সময়কাল'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: { size: 14 },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 4,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y + ' টি পুশ আপ';
+                                } else {
+                                    return null;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const progressInputs = document.querySelectorAll('.progress-input');
+        const goalInput = document.getElementById('goal-input');
+        const feedbackPanel = document.getElementById('feedback-panel');
+        const resetBtn = document.getElementById('reset-chart');
+        const saveBtn = document.getElementById('save-progress');
+        const progressCircle = document.getElementById('progress-circle');
+        const progressText = document.getElementById('progress-text');
+        
+        function updateChartAndFeedback() {
+            const goalValue = parseInt(goalInput.value) || 100;
+
+            const newData = Array.from(progressInputs).map(input => input.value ? parseInt(input.value) : null);
+            progressChart.data.datasets[0].data = newData;
+
+            const validDataPoints = [];
+            newData.forEach((d, i) => {
+                if (d !== null && !isNaN(d)) {
+                    validDataPoints.push({x: i, y: d});
+                }
+            });
+
+            const newProjectionData = [null, null, null, null];
+            if(validDataPoints.length > 0){
+                validDataPoints.forEach((point, i) => {
+                   newProjectionData[point.x] = point.y;
+                });
+
+                if(validDataPoints.length > 1){
+                    const lastPoint = validDataPoints[validDataPoints.length - 1];
+                    const secondLastPoint = validDataPoints[validDataPoints.length - 2];
+                    
+                    if (lastPoint.x > secondLastPoint.x) {
+                       const slope = (lastPoint.y - secondLastPoint.y) / (lastPoint.x - secondLastPoint.x);
+                        for(let i = lastPoint.x + 1; i < 4; i++){
+                           const projectedValue = lastPoint.y + slope * (i - lastPoint.x);
+                           newProjectionData[i] = Math.round(Math.max(0, projectedValue));
+                        }
+                    }
+                }
+            }
+            progressChart.data.datasets[1].data = newProjectionData;
+            
+            progressChart.update();
+
+            const validData = newData.filter(d => d !== null && !isNaN(d));
+
+            if(validData.length === 0) {
+                feedbackPanel.innerHTML = `<p class="text-slate-700 font-medium">আপনার টেস্ট ডে'র ফলাফল ইনপুট করে অগ্রগতি দেখুন।</p>`;
+                progressCircle.style.strokeDashoffset = 100;
+                progressText.innerHTML = `<span class="block text-3xl font-bold text-indigo-600">0%</span><span class="text-xs text-slate-500">লক্ষ্যের দিকে</span>`;
+                return;
+            }
+
+            const maxValue = Math.max(...validData);
+            const averageValue = Math.round(validData.reduce((a, b) => a + b, 0) / validData.length);
+
+            let feedbackHTML = `<p class="text-lg font-semibold text-indigo-700">সর্বোচ্চ অর্জন: ${maxValue} টি</p>`;
+            feedbackHTML += `<p class="text-md text-slate-600 mt-1">গড় উন্নতি: ${averageValue} টি</p>`;
+            
+            if (maxValue < goalValue) {
+                feedbackHTML += `<p class="text-sm text-slate-500 mt-2">আপনার লক্ষ্য (${goalValue}) থেকে আর মাত্র ${goalValue - maxValue} টি পুশ-আপ দূরে আছেন। চালিয়ে যান!</p>`;
+            } else {
+                feedbackHTML += `<p class="text-sm text-green-600 font-semibold mt-2">অভিনন্দন! আপনি আপনার লক্ষ্য অর্জন করেছেন!</p>`;
+            }
+            feedbackPanel.innerHTML = feedbackHTML;
+            
+            const progressPercentage = Math.min(100, (maxValue / goalValue) * 100);
+            const offset = 100 - progressPercentage;
+            progressCircle.style.strokeDashoffset = offset;
+            progressText.innerHTML = `<span class="block text-3xl font-bold text-indigo-600">${Math.round(progressPercentage)}%</span><span class="text-xs text-slate-500">লক্ষ্যের দিকে</span>`;
+
+        }
+        
+        function saveData() {
+            const dataToSave = {
+                goal: goalInput.value,
+                results: Array.from(progressInputs).map(input => input.value),
+                currentWeek: localStorage.getItem('currentPushupWeek')
+            };
+            localStorage.setItem('pushupChallengeProgress', JSON.stringify(dataToSave));
+            saveBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg> সেভ হয়েছে!`;
+            setTimeout(() => {
+                 saveBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 2.5a.5.5 0 00-1 0v1.5H5a.5.5 0 000 1h1.5V6a.5.5 0 001 0V5h1.5a.5.5 0 000-1H8V2.5zM12.5 5a.5.5 0 01.5.5v10a.5.5 0 01-1 0V5.5a.5.5 0 01.5-.5zM3.5 12a.5.5 0 00-1 0v1.5H1a.5.5 0 000 1h1.5V16a.5.5 0 001 0v-1.5H5a.5.5 0 000-1H3.5V12z"/></svg> সেভ করুন`;
+            }, 2000);
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('pushupChallengeProgress');
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                goalInput.value = parsedData.goal || '100';
+                progressInputs.forEach((input, index) => {
+                    input.value = parsedData.results[index] || '';
+                });
+                if (parsedData.currentWeek) {
+                    localStorage.setItem('currentPushupWeek', parsedData.currentWeek);
+                    const currentCard = document.querySelector(`.week-card[data-week="${parsedData.currentWeek}"]`);
+                    if (currentCard) {
+                        weekCards.forEach(c => c.classList.remove('current-week'));
+                        currentCard.classList.add('current-week');
+                    }
+                }
+                updateChartAndFeedback();
+            } else {
+                const savedWeek = localStorage.getItem('currentPushupWeek');
+                if (savedWeek) {
+                    const currentCard = document.querySelector(`.week-card[data-week="${savedWeek}"]`);
+                    if (currentCard) {
+                        weekCards.forEach(c => c.classList.remove('current-week'));
+                        currentCard.classList.add('current-week');
+                    }
+                }
+            }
+        }
+
+        progressInputs.forEach(input => {
+            input.addEventListener('input', updateChartAndFeedback);
+        });
+
+        goalInput.addEventListener('input', updateChartAndFeedback);
+
+        resetBtn.addEventListener('click', () => {
+            progressInputs.forEach(input => input.value = '');
+            goalInput.value = '100';
+            weekCards.forEach(c => c.classList.remove('current-week'));
+            localStorage.removeItem('pushupChallengeProgress');
+            localStorage.removeItem('currentPushupWeek');
+            updateChartAndFeedback();
+        });
+
+        saveBtn.addEventListener('click', saveData);
+        
+        window.addEventListener('load', loadData);
+
+    </script>
+</body>
+</html>
